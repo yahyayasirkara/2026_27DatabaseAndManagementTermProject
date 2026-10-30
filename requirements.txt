@@ -1,6 +1,0 @@
-# Projenin çalışması için gereken Python kütüphaneleri. Kurmak için: pip install -r requirements.txt
-Flask==3.0.0
-flask-jwt-extended==4.5.3
-mysql-connector-python==8.2.0
-flasgger==0.9.7.1
-python-dotenv==1.0.0

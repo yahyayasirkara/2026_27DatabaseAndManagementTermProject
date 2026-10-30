@@ -1,8 +1,0 @@
-#burada naptik : git'e şu dosya ve klasörleri GitHub’a gönderme diyen listedir
-venv/
-env/
-.env
-__pycache__/
-*.pyc
-.vscode/
-.idea/
