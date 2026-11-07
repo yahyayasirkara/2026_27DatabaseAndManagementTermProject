@@ -10,6 +10,9 @@ def create_app():
     jwt.init_app(app)
     swagger.init_app(app)
 
+    from app.controllers.oda_tipi_controller import oda_tipi_bp
+    app.register_blueprint(oda_tipi_bp)
+
     @app.route('/')
     def index():
         return jsonify({"mesaj": "Modüler Flask Backend Başarıyla Çalışıyor!"})
