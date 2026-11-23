@@ -19,6 +19,9 @@ def create_app():
     from app.controllers.oda_controller import oda_bp
     app.register_blueprint(oda_bp)
 
+    from app.controllers.rezervasyon_controller import rezervasyon_bp
+    app.register_blueprint(rezervasyon_bp)
+
     @app.route('/')
     def index():
         return jsonify({"mesaj": "Modüler Flask Backend Başarıyla Çalışıyor!"})
