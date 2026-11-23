@@ -1,9 +1,9 @@
 CREATE DATABASE IF NOT EXISTS Otel_DB
 CHARACTER SET utf8mb4 
 COLLATE utf8mb4_unicode_ci;
- 
+
 USE Otel_DB;
- 
+
 DROP TABLE IF EXISTS OdaTipi;
 CREATE TABLE OdaTipi (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -12,8 +12,7 @@ CREATE TABLE OdaTipi (
     aciklama TEXT,
     temel_fiyat DECIMAL(10, 2) NOT NULL
 ) ENGINE=InnoDB;
- 
-DROP TABLE IF EXISTS Oda;
+
 CREATE TABLE Oda (
     id INT AUTO_INCREMENT PRIMARY KEY,
     oda_numarasi VARCHAR(10) NOT NULL UNIQUE,
@@ -22,8 +21,7 @@ CREATE TABLE Oda (
     durum ENUM('boş', 'dolu', 'temizlikte', 'bakımda') NOT NULL DEFAULT 'boş',
     CONSTRAINT fk_oda_tipi FOREIGN KEY (oda_tipi_id) REFERENCES OdaTipi(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
- 
-DROP TABLE IF EXISTS SezonFiyati;
+
 CREATE TABLE SezonFiyati (
     id INT AUTO_INCREMENT PRIMARY KEY,
     oda_tipi_id INT NOT NULL,
@@ -33,8 +31,7 @@ CREATE TABLE SezonFiyati (
     CONSTRAINT fk_sezon_oda_tipi FOREIGN KEY (oda_tipi_id) REFERENCES OdaTipi(id) ON DELETE CASCADE,
     CONSTRAINT chk_sezon_tarih CHECK (bitis_tarihi >= baslangic_tarihi)
 ) ENGINE=InnoDB;
- 
-DROP TABLE IF EXISTS Misafir;
+
 CREATE TABLE Misafir (
     id INT AUTO_INCREMENT PRIMARY KEY,
     ad VARCHAR(50) NOT NULL,
@@ -44,8 +41,7 @@ CREATE TABLE Misafir (
     eposta VARCHAR(100) NOT NULL UNIQUE,
     dogum_tarihi DATE NOT NULL
 ) ENGINE=InnoDB;
- 
-DROP TABLE IF EXISTS Personel;
+
 CREATE TABLE Personel (
     id INT AUTO_INCREMENT PRIMARY KEY,
     ad VARCHAR(50) NOT NULL,
@@ -53,8 +49,7 @@ CREATE TABLE Personel (
     gorev ENUM('resepsiyon', 'kat görevlisi', 'yönetici') NOT NULL,
     ise_giris_tarihi DATE NOT NULL
 ) ENGINE=InnoDB;
- 
-DROP TABLE IF EXISTS Kullanici;
+
 CREATE TABLE Kullanici (
     id INT AUTO_INCREMENT PRIMARY KEY,
     kullanici_adi VARCHAR(50) NOT NULL UNIQUE,
@@ -65,8 +60,7 @@ CREATE TABLE Kullanici (
     CONSTRAINT fk_kullanici_misafir FOREIGN KEY (misafir_id) REFERENCES Misafir(id) ON DELETE CASCADE,
     CONSTRAINT fk_kullanici_personel FOREIGN KEY (personel_id) REFERENCES Personel(id) ON DELETE CASCADE
 ) ENGINE=InnoDB;
- 
-DROP TABLE IF EXISTS Rezervasyon;
+
 CREATE TABLE Rezervasyon (
     id INT AUTO_INCREMENT PRIMARY KEY,
     misafir_id INT NOT NULL,
@@ -80,8 +74,7 @@ CREATE TABLE Rezervasyon (
     CONSTRAINT fk_rezervasyon_oda FOREIGN KEY (oda_id) REFERENCES Oda(id) ON DELETE RESTRICT,
     CONSTRAINT chk_rezervasyon_tarih CHECK (cikis_tarihi > giris_tarihi)
 ) ENGINE=InnoDB;
- 
-DROP TABLE IF EXISTS Konaklama;
+
 CREATE TABLE Konaklama (
     id INT AUTO_INCREMENT PRIMARY KEY,
     rezervasyon_id INT NOT NULL UNIQUE,
@@ -94,15 +87,13 @@ CREATE TABLE Konaklama (
     CONSTRAINT fk_konaklama_giris_personel FOREIGN KEY (giris_yapan_personel_id) REFERENCES Personel(id) ON DELETE RESTRICT,
     CONSTRAINT fk_konaklama_cikis_personel FOREIGN KEY (cikis_yapan_personel_id) REFERENCES Personel(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
- 
-DROP TABLE IF EXISTS EkHizmet;
+
 CREATE TABLE EkHizmet (
     id INT AUTO_INCREMENT PRIMARY KEY,
     hizmet_adi VARCHAR(100) NOT NULL UNIQUE,
     birim_fiyat DECIMAL(10, 2) NOT NULL
 ) ENGINE=InnoDB;
- 
-DROP TABLE IF EXISTS KonaklamaHizmeti;
+
 CREATE TABLE KonaklamaHizmeti (
     id INT AUTO_INCREMENT PRIMARY KEY,
     konaklama_id INT NOT NULL,
@@ -113,8 +104,7 @@ CREATE TABLE KonaklamaHizmeti (
     CONSTRAINT fk_kh_konaklama FOREIGN KEY (konaklama_id) REFERENCES Konaklama(id) ON DELETE CASCADE,
     CONSTRAINT fk_kh_ek_hizmet FOREIGN KEY (ek_hizmet_id) REFERENCES EkHizmet(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
- 
-DROP TABLE IF EXISTS Odeme;
+
 CREATE TABLE Odeme (
     id INT AUTO_INCREMENT PRIMARY KEY,
     konaklama_id INT NOT NULL,
@@ -123,8 +113,7 @@ CREATE TABLE Odeme (
     tarih DATETIME DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_odeme_konaklama FOREIGN KEY (konaklama_id) REFERENCES Konaklama(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
- 
-DROP TABLE IF EXISTS TemizlikKaydi;
+
 CREATE TABLE TemizlikKaydi (
     id INT AUTO_INCREMENT PRIMARY KEY,
     oda_id INT NOT NULL,
@@ -134,16 +123,15 @@ CREATE TABLE TemizlikKaydi (
     CONSTRAINT fk_temizlik_oda FOREIGN KEY (oda_id) REFERENCES Oda(id) ON DELETE CASCADE,
     CONSTRAINT fk_temizlik_personel FOREIGN KEY (personel_id) REFERENCES Personel(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB;
- 
-DROP TABLE IF EXISTS IslemLog;
+
 CREATE TABLE IslemLog (
     id INT AUTO_INCREMENT PRIMARY KEY,
     tablo_adi VARCHAR(50) NOT NULL,
     islem_turu ENUM('INSERT', 'UPDATE', 'DELETE') NOT NULL,
-    kayit_id INT NOT NULL, 
+    kayit_id INT NOT NULL,
     eski_deger JSON NULL,
     yeni_deger JSON NULL,
-    islem_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP, 
+    islem_tarihi DATETIME DEFAULT CURRENT_TIMESTAMP,
     kullanici VARCHAR(50) DEFAULT 'SISTEM'
 ) ENGINE=InnoDB;
 

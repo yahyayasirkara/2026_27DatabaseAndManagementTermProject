@@ -4,7 +4,6 @@ from app.entities.oda_tipi import OdaTipi
 
 class OdaTipiRepository:
     def get_db_connection(self):
-        # Ayarları config.py yerine doğrudan .env dosyasından güvenle okuyoruz
         return mysql.connector.connect(
             host=os.getenv('DB_HOST', 'localhost'),
             user=os.getenv('DB_USER', 'root'),
