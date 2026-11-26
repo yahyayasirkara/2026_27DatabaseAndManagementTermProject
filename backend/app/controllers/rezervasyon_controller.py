@@ -1,8 +1,10 @@
 from flask import Blueprint, jsonify, request
 from app.repositories.rezervasyon_repository import RezervasyonRepository
+from app.services.rezervasyon_service import RezervasyonService
 
 rezervasyon_bp = Blueprint('rezervasyon', __name__, url_prefix='/api/rezervasyonlar')
 repo = RezervasyonRepository()
+service = RezervasyonService()
 
 @rezervasyon_bp.route('/', methods=['GET'])
 def rezervasyonlari_getir():
@@ -12,15 +14,8 @@ def rezervasyonlari_getir():
 @rezervasyon_bp.route('/', methods=['POST'])
 def rezervasyon_ekle():
     veri = request.get_json()
-    yeni_id = repo.ekle(
-        misafir_id=veri['misafir_id'],
-        oda_id=veri['oda_id'],
-        giris_tarihi=veri['giris_tarihi'],
-        cikis_tarihi=veri['cikis_tarihi'],
-        kisi_sayisi=veri['kisi_sayisi'],
-        durum=veri.get('durum', 'beklemede')
-    )
-    return jsonify({"mesaj": "Rezervasyon oluşturuldu", "id": yeni_id}), 201
+    sonuc, durum_kodu = service.rezervasyon_olustur(veri)
+    return jsonify(sonuc), durum_kodu
 
 @rezervasyon_bp.route('/<int:rezervasyon_id>/durum', methods=['PATCH'])
 def rezervasyon_durum_guncelle(rezervasyon_id):
