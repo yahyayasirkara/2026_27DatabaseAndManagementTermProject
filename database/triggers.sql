@@ -10,8 +10,12 @@ BEGIN
     DECLARE oda_kapasitesi INT DEFAULT NULL;
     DECLARE cakisan_sayisi INT DEFAULT 0;
     DECLARE hata_mesaji VARCHAR(200);
+    DECLARE kilitli_oda_id INT DEFAULT NULL;
  
     IF NEW.durum <> 'iptal' THEN
+        -- Aynı odaya aynı anda gelen iki rezervasyon sırayla işlensin diye Oda satırı kilitlenir.
+        -- (Rezervasyon tablosunda FOR UPDATE kullanılamaz: hata 1442)
+        SELECT Oda.id INTO kilitli_oda_id FROM Oda WHERE Oda.id = NEW.oda_id FOR UPDATE;
         SELECT OdaTipi.kapasite INTO oda_kapasitesi FROM Oda JOIN OdaTipi ON OdaTipi.id = Oda.oda_tipi_id WHERE Oda.id = NEW.oda_id;
  
         IF oda_kapasitesi IS NOT NULL AND (NEW.kisi_sayisi < 1 OR NEW.kisi_sayisi > oda_kapasitesi) THEN
@@ -22,8 +26,7 @@ BEGIN
         SELECT COUNT(*) INTO cakisan_sayisi FROM Rezervasyon WHERE oda_id = NEW.oda_id
           AND durum <> 'iptal'
           AND giris_tarihi < NEW.cikis_tarihi
-          AND cikis_tarihi > NEW.giris_tarihi
-        FOR UPDATE;
+          AND cikis_tarihi > NEW.giris_tarihi;
  
         IF cakisan_sayisi > 0 THEN
             SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 45001,
@@ -40,8 +43,12 @@ BEGIN
     DECLARE oda_kapasitesi INT DEFAULT NULL;
     DECLARE cakisan_sayisi INT DEFAULT 0;
     DECLARE hata_mesaji VARCHAR(200);
+    DECLARE kilitli_oda_id INT DEFAULT NULL;
  
     IF NEW.durum <> 'iptal' THEN
+        -- Aynı odaya aynı anda gelen iki rezervasyon sırayla işlensin diye Oda satırı kilitlenir.
+        -- (Rezervasyon tablosunda FOR UPDATE kullanılamaz: hata 1442)
+        SELECT Oda.id INTO kilitli_oda_id FROM Oda WHERE Oda.id = NEW.oda_id FOR UPDATE;
         SELECT OdaTipi.kapasite INTO oda_kapasitesi FROM Oda JOIN OdaTipi ON OdaTipi.id = Oda.oda_tipi_id WHERE Oda.id = NEW.oda_id;
  
         IF oda_kapasitesi IS NOT NULL AND (NEW.kisi_sayisi < 1 OR NEW.kisi_sayisi > oda_kapasitesi) THEN
@@ -55,8 +62,7 @@ BEGIN
           AND durum <> 'iptal'
           AND id <> NEW.id
           AND giris_tarihi < NEW.cikis_tarihi
-          AND cikis_tarihi > NEW.giris_tarihi
-        FOR UPDATE;
+          AND cikis_tarihi > NEW.giris_tarihi;
  
         IF cakisan_sayisi > 0 THEN
             SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 45001,
