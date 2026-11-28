@@ -13,8 +13,6 @@ BEGIN
     DECLARE kilitli_oda_id INT DEFAULT NULL;
  
     IF NEW.durum <> 'iptal' THEN
-        -- Aynı odaya aynı anda gelen iki rezervasyon sırayla işlensin diye Oda satırı kilitlenir.
-        -- (Rezervasyon tablosunda FOR UPDATE kullanılamaz: hata 1442)
         SELECT Oda.id INTO kilitli_oda_id FROM Oda WHERE Oda.id = NEW.oda_id FOR UPDATE;
         SELECT OdaTipi.kapasite INTO oda_kapasitesi FROM Oda JOIN OdaTipi ON OdaTipi.id = Oda.oda_tipi_id WHERE Oda.id = NEW.oda_id;
  
@@ -46,8 +44,6 @@ BEGIN
     DECLARE kilitli_oda_id INT DEFAULT NULL;
  
     IF NEW.durum <> 'iptal' THEN
-        -- Aynı odaya aynı anda gelen iki rezervasyon sırayla işlensin diye Oda satırı kilitlenir.
-        -- (Rezervasyon tablosunda FOR UPDATE kullanılamaz: hata 1442)
         SELECT Oda.id INTO kilitli_oda_id FROM Oda WHERE Oda.id = NEW.oda_id FOR UPDATE;
         SELECT OdaTipi.kapasite INTO oda_kapasitesi FROM Oda JOIN OdaTipi ON OdaTipi.id = Oda.oda_tipi_id WHERE Oda.id = NEW.oda_id;
  
@@ -105,10 +101,10 @@ CREATE TRIGGER trg_konaklama_checkin_ai
 AFTER INSERT ON Konaklama
 FOR EACH ROW
 BEGIN
+    DECLARE v_oda_id INT;
     IF NEW.gercek_cikis_zamani IS NULL THEN
-        UPDATE Oda
-        SET durum = 'dolu'
-        WHERE id = (SELECT oda_id FROM Rezervasyon WHERE id = NEW.rezervasyon_id);
+        SELECT oda_id INTO v_oda_id FROM Rezervasyon WHERE id = NEW.rezervasyon_id;
+        UPDATE Oda SET durum = 'dolu' WHERE id = v_oda_id;
     END IF;
 END$$
 
@@ -117,14 +113,11 @@ CREATE TRIGGER trg_konaklama_checkout_au
 AFTER UPDATE ON Konaklama
 FOR EACH ROW
 BEGIN
+    DECLARE v_oda_id INT;
     IF OLD.gercek_cikis_zamani IS NULL AND NEW.gercek_cikis_zamani IS NOT NULL THEN
-        UPDATE Oda
-        SET durum = 'temizlikte'
-        WHERE id = (SELECT oda_id FROM Rezervasyon WHERE id = NEW.rezervasyon_id);
- 
-        UPDATE Rezervasyon
-        SET durum = 'tamamlandı'
-        WHERE id = NEW.rezervasyon_id;
+        SELECT oda_id INTO v_oda_id FROM Rezervasyon WHERE id = NEW.rezervasyon_id;
+        UPDATE Oda SET durum = 'temizlikte' WHERE id = v_oda_id;
+        UPDATE Rezervasyon SET durum = 'tamamlandı' WHERE id = NEW.rezervasyon_id;
     END IF;
 END$$
 
@@ -200,4 +193,3 @@ BEGIN
 END$$
  
 DELIMITER ;
- 
