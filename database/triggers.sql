@@ -2,6 +2,7 @@ USE Otel_DB;
  
 DELIMITER $$
 
+-- 1) REZERVASYON ÇAKIŞMA VE KAPASİTE KONTROLÜ (INSERT)
 DROP TRIGGER IF EXISTS trg_rezervasyon_cakisma_bi$$
 CREATE TRIGGER trg_rezervasyon_cakisma_bi
 BEFORE INSERT ON Rezervasyon
@@ -33,6 +34,7 @@ BEGIN
     END IF;
 END$$
 
+-- 2) REZERVASYON ÇAKIŞMA VE KAPASİTE KONTROLÜ (UPDATE)
 DROP TRIGGER IF EXISTS trg_rezervasyon_cakisma_bu$$
 CREATE TRIGGER trg_rezervasyon_cakisma_bu
 BEFORE UPDATE ON Rezervasyon
@@ -66,8 +68,8 @@ BEGIN
         END IF;
     END IF;
 END$$
- 
 
+-- 3) CHECK-IN ÖNCESİ KONTROL
 DROP TRIGGER IF EXISTS trg_konaklama_checkin_kontrol_bi$$
 CREATE TRIGGER trg_konaklama_checkin_kontrol_bi
 BEFORE INSERT ON Konaklama
@@ -85,9 +87,7 @@ BEGIN
                 MESSAGE_TEXT = 'Check-in yapılamaz: rezervasyon onaylı durumda değil.';
         END IF;
  
-        SELECT durum INTO oda_durumu
-        FROM Oda
-        WHERE id = rez_oda_id;
+        SELECT durum INTO oda_durumu FROM Oda WHERE id = rez_oda_id;
  
         IF oda_durumu <> 'boş' THEN
             SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 45001,
@@ -96,6 +96,7 @@ BEGIN
     END IF;
 END$$
 
+-- 4) CHECK-IN SONRASI ODAYI 'DOLU' YAP
 DROP TRIGGER IF EXISTS trg_konaklama_checkin_ai$$
 CREATE TRIGGER trg_konaklama_checkin_ai
 AFTER INSERT ON Konaklama
@@ -108,6 +109,7 @@ BEGIN
     END IF;
 END$$
 
+-- 5) CHECK-OUT SONRASI ODAYI 'TEMİZLİKTE', REZERVASYONU 'TAMAMLANDI' YAP
 DROP TRIGGER IF EXISTS trg_konaklama_checkout_au$$
 CREATE TRIGGER trg_konaklama_checkout_au
 AFTER UPDATE ON Konaklama
@@ -121,7 +123,66 @@ BEGIN
     END IF;
 END$$
 
- 
+-- 6) TEMİZLİK KAYDI EKLENİNCE / GÜNCELLENİNCE ODAYI 'BOŞ' YAP (TEST 11 İÇİN)
+DROP TRIGGER IF EXISTS trg_temizlik_kaydi_ai$$
+CREATE TRIGGER trg_temizlik_kaydi_ai
+AFTER INSERT ON TemizlikKaydi
+FOR EACH ROW
+BEGIN
+    IF NEW.durum = 'temizlendi' THEN
+        UPDATE Oda SET durum = 'boş' WHERE id = NEW.oda_id;
+    END IF;
+END$$
+
+DROP TRIGGER IF EXISTS trg_temizlik_kaydi_au$$
+CREATE TRIGGER trg_temizlik_kaydi_au
+AFTER UPDATE ON TemizlikKaydi
+FOR EACH ROW
+BEGIN
+    IF NEW.durum = 'temizlendi' AND OLD.durum <> 'temizlendi' THEN
+        UPDATE Oda SET durum = 'boş' WHERE id = NEW.oda_id;
+    END IF;
+END$$
+
+-- 7) SEZON FİYATI TARİH ÇAKIŞMASI KONTROLÜ (TEST 14 İÇİN)
+DROP TRIGGER IF EXISTS trg_sezon_fiyati_cakisma_bi$$
+CREATE TRIGGER trg_sezon_fiyati_cakisma_bi
+BEFORE INSERT ON SezonFiyati
+FOR EACH ROW
+BEGIN
+    DECLARE cakisan_sezon INT DEFAULT 0;
+    SELECT COUNT(*) INTO cakisan_sezon
+    FROM SezonFiyati
+    WHERE oda_tipi_id = NEW.oda_tipi_id
+      AND baslangic_tarihi <= NEW.bitis_tarihi
+      AND bitis_tarihi >= NEW.baslangic_tarihi;
+
+    IF cakisan_sezon > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 45001,
+            MESSAGE_TEXT = 'Bu oda tipi için seçilen tarih aralığında zaten bir sezon fiyatı tanımlı.';
+    END IF;
+END$$
+
+DROP TRIGGER IF EXISTS trg_sezon_fiyati_cakisma_bu$$
+CREATE TRIGGER trg_sezon_fiyati_cakisma_bu
+BEFORE UPDATE ON SezonFiyati
+FOR EACH ROW
+BEGIN
+    DECLARE cakisan_sezon INT DEFAULT 0;
+    SELECT COUNT(*) INTO cakisan_sezon
+    FROM SezonFiyati
+    WHERE oda_tipi_id = NEW.oda_tipi_id
+      AND id <> NEW.id
+      AND baslangic_tarihi <= NEW.bitis_tarihi
+      AND bitis_tarihi >= NEW.baslangic_tarihi;
+
+    IF cakisan_sezon > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MYSQL_ERRNO = 45001,
+            MESSAGE_TEXT = 'Bu oda tipi için seçilen tarih aralığında zaten bir sezon fiyatı tanımlı.';
+    END IF;
+END$$
+
+-- 8) İŞLEM LOG TRIGGER'LARI
 DROP TRIGGER IF EXISTS trg_log_rezervasyon_ai$$
 CREATE TRIGGER trg_log_rezervasyon_ai
 AFTER INSERT ON Rezervasyon
